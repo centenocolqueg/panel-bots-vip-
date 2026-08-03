@@ -1,19 +1,24 @@
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 import json
 import os
+import shutil
 
 app = FastAPI(title="Panel Bots VIP")
 
 CONFIG_FILE = "config.json"
+UPLOAD_DIR = "uploads"
 
-# Crear configuración inicial
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
 if not os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump({
-            "grupo_publico": "",
-            "grupo_vip": "",
+            "grupo_publico": "https://t.me/+MIGBEvQEdyZlNzgx",
+            "grupo_vip": "https://t.me/+TDY6tCd4J1lkZjUx",
             "precio_vip": "20",
             "qr_yape": "",
             "admins": [
@@ -31,7 +36,12 @@ def cargar_config():
 
 def guardar_config(data):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+        json.dump(
+            data,
+            f,
+            indent=4,
+            ensure_ascii=False
+        )
 
 
 app.mount("/static", StaticFiles(directory="."), name="static")
@@ -39,9 +49,10 @@ app.mount("/static", StaticFiles(directory="."), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def inicio():
+
     config = cargar_config()
 
-    html = """
+    return f"""
     <html>
     <head>
         <title>Panel Bots VIP</title>
@@ -50,36 +61,62 @@ async def inicio():
 
     <body>
 
+    <div class="panel">
+
     <h1>🤖 Panel Bots VIP</h1>
+
 
     <form method="post">
 
     <h3>🔗 Grupo Público</h3>
-    <input name="grupo_publico" value="{publico}">
+    <input name="grupo_publico"
+    value="{config['grupo_publico']}">
+
 
     <h3>💎 Grupo VIP</h3>
-    <input name="grupo_vip" value="{vip}">
+    <input name="grupo_vip"
+    value="{config['grupo_vip']}">
+
 
     <h3>💰 Precio VIP</h3>
-    <input name="precio" value="{precio}">
+    <input name="precio"
+    value="{config['precio_vip']}">
+
 
     <h3>🤖 Token Bot</h3>
-    <input name="token" placeholder="Token del bot">
+    <input name="token"
+    placeholder="Token del bot">
 
-    <br><br>
-    <button>💾 Guardar</button>
+
+    <button>
+    💾 Guardar
+    </button>
 
     </form>
 
+
+
+    <h3>📷 QR Yape</h3>
+
+    <form action="/subir-qr"
+    method="post"
+    enctype="multipart/form-data">
+
+    <input type="file"
+    name="qr">
+
+    <button>
+    📤 Subir QR
+    </button>
+
+    </form>
+
+
+    </div>
+
     </body>
     </html>
-    """.format(
-        publico=config["grupo_publico"],
-        vip=config["grupo_vip"],
-        precio=config["precio_vip"]
-    )
-
-    return html
+    """
 
 
 @app.post("/")
@@ -96,12 +133,46 @@ async def guardar(
     config["grupo_vip"] = grupo_vip
     config["precio_vip"] = precio
 
+
     if token:
         config["bots"].append({
             "token": token,
             "activo": True
         })
 
+
     guardar_config(config)
 
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(
+        "/",
+        status_code=303
+    )
+
+
+
+@app.post("/subir-qr")
+async def subir_qr(
+    qr: UploadFile = File(...)
+):
+
+    ruta = "uploads/qr_yape.png"
+
+
+    with open(ruta, "wb") as buffer:
+        shutil.copyfileobj(
+            qr.file,
+            buffer
+        )
+
+
+    config = cargar_config()
+
+    config["qr_yape"] = ruta
+
+    guardar_config(config)
+
+
+    return RedirectResponse(
+        "/",
+        status_code=303
+    )
