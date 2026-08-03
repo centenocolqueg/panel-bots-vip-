@@ -13,11 +13,15 @@ from aiogram.types import (
 
 from database import (
     registrar_usuario,
-    obtener_usuarios
+    obtener_usuarios,
+    guardar_pago,
+    activar_vip,
+    actualizar_pago
 )
 
 
 CONFIG_FILE = "config.json"
+
 
 
 def cargar_config():
@@ -31,11 +35,13 @@ def cargar_config():
 
 
 
+
 def menu_usuario():
 
     config = cargar_config()
 
     botones = []
+
 
     if config.get("grupo_publico"):
 
@@ -75,6 +81,8 @@ def menu_usuario():
 
 
 
+
+
 def crear_bot(token):
 
     bot = Bot(
@@ -85,9 +93,9 @@ def crear_bot(token):
 
 
 
-    # ==========================
-    # INICIO USUARIO
-    # ==========================
+    # ======================
+    # START
+    # ======================
 
     @dp.message(Command("start"))
     async def start(message: types.Message):
@@ -106,9 +114,10 @@ def crear_bot(token):
 
 
 
-    # ==========================
-    # COMPRA VIP
-    # ==========================
+
+    # ======================
+    # COMPRAR VIP
+    # ======================
 
     @dp.callback_query(
         F.data == "comprar_vip"
@@ -137,15 +146,170 @@ def crear_bot(token):
         if qr and os.path.exists(qr):
 
             await call.message.answer_photo(
-                photo=open(qr, "rb"),
-                caption="📷 QR de Yape"
+                photo=open(qr,"rb"),
+                caption="📷 QR Yape"
             )
 
 
 
-    # ==========================
+
+    # ======================
+    # RECIBIR COMPROBANTE
+    # ======================
+
+    @dp.message(
+        F.photo
+    )
+    async def comprobante(
+        message: types.Message
+    ):
+
+        config = cargar_config()
+
+
+        foto = message.photo[-1]
+
+
+        guardar_pago(
+            message.from_user.id,
+            foto.file_id
+        )
+
+
+        teclado = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅ Aprobar",
+                        callback_data=f"aprobar:{message.from_user.id}"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="❌ Rechazar",
+                        callback_data=f"rechazar:{message.from_user.id}"
+                    )
+                ]
+            ]
+        )
+
+
+        for admin in config["admins"]:
+
+            try:
+
+                await bot.send_photo(
+                    admin,
+                    foto.file_id,
+                    caption=(
+                        "💰 Nuevo pago VIP\n\n"
+                        f"Usuario ID:\n{message.from_user.id}"
+                    ),
+                    reply_markup=teclado
+                )
+
+            except:
+
+                pass
+
+
+
+        await message.answer(
+            "✅ Comprobante enviado.\n"
+            "Espera la aprobación."
+        )
+
+
+
+
+    # ======================
+    # APROBAR VIP
+    # ======================
+
+    @dp.callback_query(
+        F.data.startswith("aprobar:")
+    )
+    async def aprobar(
+        call: types.CallbackQuery
+    ):
+
+        config = cargar_config()
+
+
+        if call.from_user.id not in config["admins"]:
+            return
+
+
+        user_id = int(
+            call.data.split(":")[1]
+        )
+
+
+        activar_vip(
+            user_id
+        )
+
+
+        actualizar_pago(
+            user_id,
+            "aprobado"
+        )
+
+
+        await bot.send_message(
+            user_id,
+            "🎉 Pago aprobado\n\n"
+            "💎 Bienvenido al grupo VIP:\n"
+            f"{config['grupo_vip']}"
+        )
+
+
+        await call.message.answer(
+            "✅ Usuario aprobado"
+        )
+
+
+
+
+    # ======================
+    # RECHAZAR
+    # ======================
+
+    @dp.callback_query(
+        F.data.startswith("rechazar:")
+    )
+    async def rechazar(
+        call: types.CallbackQuery
+    ):
+
+        config = cargar_config()
+
+
+        if call.from_user.id not in config["admins"]:
+            return
+
+
+        user_id = int(
+            call.data.split(":")[1]
+        )
+
+
+        await bot.send_message(
+            user_id,
+            "❌ Tu pago fue rechazado."
+        )
+
+
+        await call.message.answer(
+            "Pago rechazado"
+        )
+
+
+
+
+    # ======================
     # MI CUENTA
-    # ==========================
+    # ======================
 
     @dp.callback_query(
         F.data == "cuenta"
@@ -161,11 +325,15 @@ def crear_bot(token):
 
 
 
-    # ==========================
-    # ANUNCIO ADMIN
-    # ==========================
 
-    @dp.message(Command("anuncio"))
+
+    # ======================
+    # ANUNCIOS
+    # ======================
+
+    @dp.message(
+        Command("anuncio")
+    )
     async def anuncio(
         message: types.Message
     ):
@@ -177,23 +345,10 @@ def crear_bot(token):
             return
 
 
-
         texto = message.text.replace(
             "/anuncio",
             ""
         ).strip()
-
-
-
-        if not texto:
-
-            await message.answer(
-                "Usa:\n"
-                "/anuncio mensaje"
-            )
-
-            return
-
 
 
         enviados = 0
@@ -218,8 +373,7 @@ def crear_bot(token):
 
 
         await message.answer(
-            f"📢 Anuncio enviado\n\n"
-            f"Usuarios: {enviados}"
+            f"📢 Enviado a {enviados} usuarios"
         )
 
 
@@ -229,9 +383,6 @@ def crear_bot(token):
 
 
 
-# ==========================
-# INICIAR TODOS LOS BOTS
-# ==========================
 
 async def iniciar():
 
@@ -245,9 +396,7 @@ async def iniciar():
         []
     ):
 
-        if item.get(
-            "activo"
-        ):
+        if item.get("activo"):
 
             bot, dp = crear_bot(
                 item["token"]
@@ -257,7 +406,6 @@ async def iniciar():
             tareas.append(
                 dp.start_polling(bot)
             )
-
 
 
     if tareas:
