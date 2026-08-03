@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Panel Bots VIP</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
@@ -12,57 +12,83 @@
 <h1>🤖 Panel Bots VIP</h1>
 
 
+<form method="post" action="/">
+
 <h2>🔗 Enlaces</h2>
 
 <label>Grupo Público</label>
-<input type="text" placeholder="Enlace grupo público">
+<input 
+type="text" 
+name="grupo_publico"
+placeholder="Enlace grupo público">
 
 
 <label>💎 Grupo VIP</label>
-<input type="text" placeholder="Enlace grupo VIP">
+<input 
+type="text" 
+name="grupo_vip"
+placeholder="Enlace grupo VIP">
 
 
 <h2>💰 Precio VIP</h2>
 
-<input type="number" value="20">
+<input 
+type="number" 
+name="precio"
+value="20">
 
 
 <h2>🤖 Bots</h2>
+
 
 <div class="bot">
 
 <h3>Bot 1</h3>
 
-<input type="text" placeholder="Token del bot">
+<input 
+type="text" 
+name="token"
+placeholder="Token del bot">
 
-<button>
-🟢 Guardar
-</button>
 
 </div>
-
-
-<div class="bot">
-
-<h3>Bot 2</h3>
-
-<input type="text" placeholder="Token del bot">
-
-<button>
-🟢 Guardar
-</button>
-
-</div>
-
-
-<p>
-Puedes agregar hasta 20 bots.
-</p>
 
 
 <button class="save">
 💾 Guardar configuración
 </button>
+
+</form>
+
+
+<hr>
+
+
+<h2>📷 QR Yape</h2>
+
+<form 
+action="/subir-qr"
+method="post"
+enctype="multipart/form-data">
+
+
+<input 
+type="file" 
+name="qr"
+accept="image/*">
+
+
+<button>
+📤 Subir QR Yape
+</button>
+
+
+</form>
+
+
+<p>
+💎 Precio VIP: S/20
+</p>
 
 
 </div>
