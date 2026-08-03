@@ -21,11 +21,11 @@ ADMINS = [
 ]
 
 
-# Archivo donde se guarda la configuración
+# Archivo configuración
 CONFIG_FILE = "config.json"
 
 
-# Token opcional del bot principal
+# Token principal opcional
 BOT_TOKEN = os.getenv(
     "BOT_TOKEN",
     ""
@@ -36,11 +36,17 @@ BOT_TOKEN = os.getenv(
 DATABASE = "usuarios.db"
 
 
-# Enlaces iniciales
+# Grupo público
 GRUPO_PUBLICO = "https://t.me/+MIGBEvQEdyZlNzgx"
 
+
+# Grupo VIP
 GRUPO_VIP = "https://t.me/+TDY6tCd4J1lkZjUx"
 
 
-# QR Yape
-QR_YAPE = ""
+# Precio mostrado
+PRECIO = "S/20"
+
+
+# Ruta del QR Yape
+QR_YAPE = "uploads/qr_yape.png"
