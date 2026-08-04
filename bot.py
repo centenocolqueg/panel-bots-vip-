@@ -144,7 +144,7 @@ def crear_bot(token):
                 photo=FSInputFile(qr),
                 caption="📷 QR Yape"
             )
-    # ======================
+                # ======================
     # RECIBIR COMPROBANTE
     # ======================
 
@@ -308,15 +308,12 @@ def crear_bot(token):
             "👤 Mi cuenta\n\n"
             f"ID: {call.from_user.id}"
         )
-
-
-
-    # ======================
+            # ======================
     # ANUNCIOS MULTIMEDIA
     # ======================
 
     @dp.message(
-        F.caption.startswith("/anuncio") | Command("anuncio")
+        Command("anuncio") | F.caption.startswith("/anuncio")
     )
     async def anuncio(
         message: types.Message
@@ -339,15 +336,32 @@ def crear_bot(token):
                 user_id = usuario["id"]
 
 
+                texto = ""
+
+
+                if message.text:
+
+                    texto = message.text.replace(
+                        "/anuncio",
+                        ""
+                    ).strip()
+
+
+                if message.caption:
+
+                    texto = message.caption.replace(
+                        "/anuncio",
+                        ""
+                    ).strip()
+
+
+
                 if message.photo:
 
                     await bot.send_photo(
                         user_id,
                         message.photo[-1].file_id,
-                        caption=message.caption.replace(
-                            "/anuncio",
-                            ""
-                        ).strip()
+                        caption=texto
                     )
 
 
@@ -356,10 +370,7 @@ def crear_bot(token):
                     await bot.send_video(
                         user_id,
                         message.video.file_id,
-                        caption=message.caption.replace(
-                            "/anuncio",
-                            ""
-                        ).strip()
+                        caption=texto
                     )
 
 
@@ -368,20 +379,11 @@ def crear_bot(token):
                     await bot.send_document(
                         user_id,
                         message.document.file_id,
-                        caption=message.caption.replace(
-                            "/anuncio",
-                            ""
-                        ).strip()
+                        caption=texto
                     )
 
 
                 elif message.text:
-
-                    texto = message.text.replace(
-                        "/anuncio",
-                        ""
-                    ).strip()
-
 
                     await bot.send_message(
                         user_id,
@@ -394,12 +396,17 @@ def crear_bot(token):
 
             except Exception as e:
 
-                print(e)
+                print(
+                    "Error anuncio:",
+                    e
+                )
 
 
         await message.answer(
             f"📢 Enviado a {enviados} usuarios"
         )
+
+
 
     return bot, dp
 
