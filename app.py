@@ -10,21 +10,17 @@ app = FastAPI(title="Panel Bots VIP")
 CONFIG_FILE = "config.json"
 UPLOAD_DIR = "uploads"
 
-
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 if not os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump({
-            "grupo_publico": "https://t.me/+MIGBEvQEdyZlNzgx",
-            "grupo_vip": "https://t.me/+TDY6tCd4J1lkZjUx",
+            "grupo_publico": "",
+            "grupo_vip": "",
             "precio_vip": "20",
             "qr_yape": "",
-            "admins": [
-                8315143020,
-                8616315480
-            ],
+            "admins": [],
             "bots": []
         }, f, indent=4)
 
@@ -44,7 +40,11 @@ def guardar_config(data):
         )
 
 
-app.mount("/static", StaticFiles(directory="."), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory="."),
+    name="static"
+)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -65,28 +65,25 @@ async def inicio():
 
     <h1>🤖 Panel Bots VIP</h1>
 
-
     <form method="post">
 
     <h3>🔗 Grupo Público</h3>
     <input name="grupo_publico"
-    value="{config['grupo_publico']}">
-
+    value="{config.get('grupo_publico','')}">
 
     <h3>💎 Grupo VIP</h3>
     <input name="grupo_vip"
-    value="{config['grupo_vip']}">
-
+    value="{config.get('grupo_vip','')}">
 
     <h3>💰 Precio VIP</h3>
     <input name="precio"
-    value="{config['precio_vip']}">
-
+    value="{config.get('precio_vip','20')}">
 
     <h3>🤖 Token Bot</h3>
     <input name="token"
     placeholder="Token del bot">
 
+    <br><br>
 
     <button>
     💾 Guardar
@@ -95,15 +92,13 @@ async def inicio():
     </form>
 
 
-
     <h3>📷 QR Yape</h3>
 
     <form action="/subir-qr"
     method="post"
     enctype="multipart/form-data">
 
-    <input type="file"
-    name="qr">
+    <input type="file" name="qr">
 
     <button>
     📤 Subir QR
@@ -149,14 +144,12 @@ async def guardar(
     )
 
 
-
 @app.post("/subir-qr")
 async def subir_qr(
     qr: UploadFile = File(...)
 ):
 
     ruta = "uploads/qr_yape.png"
-
 
     with open(ruta, "wb") as buffer:
         shutil.copyfileobj(
@@ -175,4 +168,19 @@ async def subir_qr(
     return RedirectResponse(
         "/",
         status_code=303
+    )
+
+
+# =========================
+# INICIAR PANEL WEB
+# =========================
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=False
     )
