@@ -8,7 +8,7 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import (
     InlineKeyboardMarkup,
-    InlineKeyboardButton, 
+    InlineKeyboardButton,
     FSInputFile
 )
 
