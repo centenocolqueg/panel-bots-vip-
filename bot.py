@@ -24,7 +24,6 @@ from database import (
 CONFIG_FILE = "config.json"
 
 
-
 def cargar_config():
 
     with open(
@@ -33,7 +32,6 @@ def cargar_config():
         encoding="utf-8"
     ) as f:
         return json.load(f)
-
 
 
 
@@ -82,8 +80,6 @@ def menu_usuario():
 
 
 
-
-
 def crear_bot(token):
 
     bot = Bot(
@@ -91,7 +87,6 @@ def crear_bot(token):
     )
 
     dp = Dispatcher()
-
 
 
     # ======================
@@ -112,8 +107,6 @@ def crear_bot(token):
             "Selecciona una opción:",
             reply_markup=menu_usuario()
         )
-
-
 
 
     # ======================
@@ -147,11 +140,9 @@ def crear_bot(token):
         if qr and os.path.exists(qr):
 
             await call.message.answer_photo(
-                photo=FSInputFile(qr), 
+                photo=FSInputFile(qr),
                 caption="📷 QR Yape"
             )
-
-
 
 
     # ======================
@@ -166,7 +157,6 @@ def crear_bot(token):
     ):
 
         config = cargar_config()
-
 
         foto = message.photo[-1]
 
@@ -214,12 +204,10 @@ def crear_bot(token):
                 pass
 
 
-
         await message.answer(
             "✅ Comprobante enviado.\n"
             "Espera la aprobación."
         )
-
 
 
 
@@ -271,7 +259,6 @@ def crear_bot(token):
 
 
 
-
     # ======================
     # RECHAZAR
     # ======================
@@ -307,7 +294,6 @@ def crear_bot(token):
 
 
 
-
     # ======================
     # MI CUENTA
     # ======================
@@ -326,72 +312,84 @@ def crear_bot(token):
 
 
 
-
-
     # ======================
-# ANUNCIOS MULTIMEDIA
-# ======================
+    # ANUNCIOS MULTIMEDIA
+    # ======================
 
-@dp.message(Command("anuncio"))
-async def anuncio(message: types.Message):
-
-    config = cargar_config()
-
-    if message.from_user.id not in config["admins"]:
-        return
-
-    enviados = 0
-
-    for usuario in obtener_usuarios():
-
-        try:
-
-            if message.photo:
-
-                await bot.send_photo(
-                    usuario["id"],
-                    message.photo[-1].file_id,
-                    caption=message.caption
-                )
-
-            elif message.video:
-
-                await bot.send_video(
-                    usuario["id"],
-                    message.video.file_id,
-                    caption=message.caption
-                )
-
-            elif message.document:
-
-                await bot.send_document(
-                    usuario["id"],
-                    message.document.file_id,
-                    caption=message.caption
-                )
-
-            elif message.text:
-
-                texto = message.text.replace(
-                    "/anuncio",
-                    ""
-                ).strip()
-
-                await bot.send_message(
-                    usuario["id"],
-                    texto
-                )
-
-            enviados += 1
-
-        except:
-
-            pass
-
-
-    await message.answer(
-        f"📢 Enviado a {enviados} usuarios"
+    @dp.message(
+        Command("anuncio")
     )
+    async def anuncio(
+        message: types.Message
+    ):
+
+        config = cargar_config()
+
+
+        if message.from_user.id not in config["admins"]:
+            return
+
+
+        enviados = 0
+
+
+        for usuario in obtener_usuarios():
+
+            try:
+
+                if message.photo:
+
+                    await bot.send_photo(
+                        usuario["id"],
+                        message.photo[-1].file_id,
+                        caption=message.caption
+                    )
+
+
+                elif message.video:
+
+                    await bot.send_video(
+                        usuario["id"],
+                        message.video.file_id,
+                        caption=message.caption
+                    )
+
+
+                elif message.document:
+
+                    await bot.send_document(
+                        usuario["id"],
+                        message.document.file_id,
+                        caption=message.caption
+                    )
+
+
+                elif message.text:
+
+                    texto = message.text.replace(
+                        "/anuncio",
+                        ""
+                    ).strip()
+
+
+                    await bot.send_message(
+                        usuario["id"],
+                        texto
+                    )
+
+
+                enviados += 1
+
+
+            except:
+
+                pass
+
+
+        await message.answer(
+            f"📢 Enviado a {enviados} usuarios"
+        )
+
 
 
     return bot, dp
@@ -435,6 +433,7 @@ async def iniciar():
         print(
             "No hay bots activos"
         )
+
 
 
 
