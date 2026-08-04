@@ -9,6 +9,7 @@ from aiogram.filters import Command
 from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton
+    FSInputFile
 )
 
 from database import (
@@ -146,7 +147,7 @@ def crear_bot(token):
         if qr and os.path.exists(qr):
 
             await call.message.answer_photo(
-                photo=open(qr,"rb"),
+                photo=FSInputFile(qr), 
                 caption="📷 QR Yape"
             )
 
