@@ -329,54 +329,69 @@ def crear_bot(token):
 
 
     # ======================
-    # ANUNCIOS
-    # ======================
+# ANUNCIOS MULTIMEDIA
+# ======================
 
-    @dp.message(
-        Command("anuncio")
-    )
-    async def anuncio(
-        message: types.Message
-    ):
+@dp.message(Command("anuncio"))
+async def anuncio(message: types.Message):
 
-        config = cargar_config()
+    config = cargar_config()
 
+    if message.from_user.id not in config["admins"]:
+        return
 
-        if message.from_user.id not in config["admins"]:
-            return
+    enviados = 0
 
+    for usuario in obtener_usuarios():
 
-        texto = message.text.replace(
-            "/anuncio",
-            ""
-        ).strip()
+        try:
 
+            if message.photo:
 
-        enviados = 0
+                await bot.send_photo(
+                    usuario["id"],
+                    message.photo[-1].file_id,
+                    caption=message.caption
+                )
 
+            elif message.video:
 
-        for usuario in obtener_usuarios():
+                await bot.send_video(
+                    usuario["id"],
+                    message.video.file_id,
+                    caption=message.caption
+                )
 
-            try:
+            elif message.document:
+
+                await bot.send_document(
+                    usuario["id"],
+                    message.document.file_id,
+                    caption=message.caption
+                )
+
+            elif message.text:
+
+                texto = message.text.replace(
+                    "/anuncio",
+                    ""
+                ).strip()
 
                 await bot.send_message(
                     usuario["id"],
                     texto
                 )
 
-                enviados += 1
+            enviados += 1
+
+        except:
+
+            pass
 
 
-            except:
-
-                pass
-
-
-
-        await message.answer(
-            f"📢 Enviado a {enviados} usuarios"
-        )
-
+    await message.answer(
+        f"📢 Enviado a {enviados} usuarios"
+    )
 
 
     return bot, dp
