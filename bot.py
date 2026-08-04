@@ -1,5 +1,3 @@
-# bot.py
-
 import asyncio
 import json
 import os
@@ -205,7 +203,8 @@ def crear_bot(token):
     # ======================
     # ANUNCIOS MULTIMEDIA
     # ======================
-    @dp.message(Command("anuncio") | F.caption.startswith("/anuncio"))
+    @dp.message(Command("anuncio"))
+    @dp.message(F.caption.startswith("/anuncio"))
     async def anuncio(message: types.Message):
         config = cargar_config()
 
