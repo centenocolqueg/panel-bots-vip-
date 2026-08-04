@@ -56,7 +56,7 @@ def menu_usuario():
     return InlineKeyboardMarkup(inline_keyboard=botones)
 
 
-def crear_bot(token):
+def crear_bot(token: str):
     bot = Bot(token=token)
     dp = Dispatcher()
 
@@ -220,29 +220,28 @@ def crear_bot(token):
 
                 if message.text:
                     texto = message.text.replace("/anuncio", "").strip()
-
-                if message.caption:
+                elif message.caption:
                     texto = message.caption.replace("/anuncio", "").strip()
 
                 if message.photo:
                     await bot.send_photo(
                         user_id,
                         message.photo[-1].file_id,
-                        caption=texto
+                        caption=texto or None
                     )
                 elif message.video:
                     await bot.send_video(
                         user_id,
                         message.video.file_id,
-                        caption=texto
+                        caption=texto or None
                     )
                 elif message.document:
                     await bot.send_document(
                         user_id,
                         message.document.file_id,
-                        caption=texto
+                        caption=texto or None
                     )
-                elif message.text:
+                elif texto:
                     await bot.send_message(user_id, texto)
 
                 enviados += 1
