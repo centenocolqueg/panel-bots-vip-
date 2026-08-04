@@ -104,6 +104,11 @@ def crear_bot(token: str):
     @dp.message(F.photo)
     async def comprobante(message: types.Message):
         config = cargar_config()
+
+        # Evitar que los admins sean tomados como compradores
+        if message.from_user.id in config["admins"]:
+            return
+
         foto = message.photo[-1]
 
         guardar_pago(
@@ -202,54 +207,60 @@ def crear_bot(token: str):
 
     # ======================
     # ANUNCIOS MULTIMEDIA
+    # Responder foto/video + /anuncio
     # ======================
     @dp.message(Command("anuncio"))
-    @dp.message(F.caption.startswith("/anuncio"))
     async def anuncio(message: types.Message):
         config = cargar_config()
 
         if message.from_user.id not in config["admins"]:
             return
 
+        if not message.reply_to_message:
+            await message.answer(
+                "⚠️ Responde una foto, video o documento con /anuncio"
+            )
+            return
+
+        original = message.reply_to_message
         enviados = 0
 
         for usuario in obtener_usuarios():
             try:
                 user_id = usuario["id"]
-                texto = ""
 
-                if message.text:
-                    texto = message.text.replace("/anuncio", "").strip()
-                elif message.caption:
-                    texto = message.caption.replace("/anuncio", "").strip()
-
-                if message.photo:
+                if original.photo:
                     await bot.send_photo(
                         user_id,
-                        message.photo[-1].file_id,
-                        caption=texto or None
+                        original.photo[-1].file_id,
+                        caption=original.caption
                     )
-                elif message.video:
+                elif original.video:
                     await bot.send_video(
                         user_id,
-                        message.video.file_id,
-                        caption=texto or None
+                        original.video.file_id,
+                        caption=original.caption
                     )
-                elif message.document:
+                elif original.document:
                     await bot.send_document(
                         user_id,
-                        message.document.file_id,
-                        caption=texto or None
+                        original.document.file_id,
+                        caption=original.caption
                     )
-                elif texto:
-                    await bot.send_message(user_id, texto)
+                elif original.text:
+                    await bot.send_message(
+                        user_id,
+                        original.text
+                    )
 
                 enviados += 1
 
             except Exception as e:
                 print("Error anuncio:", e)
 
-        await message.answer(f"📢 Enviado a {enviados} usuarios")
+        await message.answer(
+            f"📢 Anuncio enviado a {enviados} usuarios"
+        )
 
     return bot, dp
 
