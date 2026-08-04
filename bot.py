@@ -25,82 +25,52 @@ CONFIG_FILE = "config.json"
 
 
 def cargar_config():
-
-    with open(
-        CONFIG_FILE,
-        "r",
-        encoding="utf-8"
-    ) as f:
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-
 def menu_usuario():
-
     config = cargar_config()
-
     botones = []
 
-
     if config.get("grupo_publico"):
+        botones.append([
+            InlineKeyboardButton(
+                text="📢 Grupo Público",
+                url=config["grupo_publico"]
+            )
+        ])
 
-        botones.append(
-            [
-                InlineKeyboardButton(
-                    text="📢 Grupo Público",
-                    url=config["grupo_publico"]
-                )
-            ]
+    botones.append([
+        InlineKeyboardButton(
+            text="💎 Comprar VIP S/20",
+            callback_data="comprar_vip"
         )
+    ])
 
+    botones.append([
+        InlineKeyboardButton(
+            text="👤 Mi Cuenta",
+            callback_data="cuenta"
+        )
+    ])
 
-    botones.append(
-        [
-            InlineKeyboardButton(
-                text="💎 Comprar VIP S/20",
-                callback_data="comprar_vip"
-            )
-        ]
-    )
-
-
-    botones.append(
-        [
-            InlineKeyboardButton(
-                text="👤 Mi Cuenta",
-                callback_data="cuenta"
-            )
-        ]
-    )
-
-
-    return InlineKeyboardMarkup(
-        inline_keyboard=botones
-    )
-
+    return InlineKeyboardMarkup(inline_keyboard=botones)
 
 
 def crear_bot(token):
-
-    bot = Bot(
-        token=token
-    )
-
+    bot = Bot(token=token)
     dp = Dispatcher()
-
 
     # ======================
     # START
     # ======================
-
     @dp.message(Command("start"))
     async def start(message: types.Message):
-
         registrar_usuario(
             message.from_user.id,
             message.from_user.username
         )
-
 
         await message.answer(
             "🤖 Bienvenido\n\n"
@@ -108,63 +78,40 @@ def crear_bot(token):
             reply_markup=menu_usuario()
         )
 
-
-
     # ======================
     # COMPRAR VIP
     # ======================
-
-    @dp.callback_query(
-        F.data == "comprar_vip"
-    )
-    async def comprar_vip(
-        call: types.CallbackQuery
-    ):
-
+    @dp.callback_query(F.data == "comprar_vip")
+    async def comprar_vip(call: types.CallbackQuery):
         config = cargar_config()
-
 
         await call.message.answer(
             "💎 Compra VIP\n\n"
-            f"Precio: S/ {config.get('precio_vip','20')}\n\n"
+            f"Precio: S/ {config.get('precio_vip', '20')}\n\n"
             "Realiza el pago por Yape.\n"
             "Luego envía tu comprobante."
         )
 
-
-        qr = config.get(
-            "qr_yape",
-            ""
-        )
-
+        qr = config.get("qr_yape", "")
 
         if qr and os.path.exists(qr):
-
             await call.message.answer_photo(
                 photo=FSInputFile(qr),
                 caption="📷 QR Yape"
             )
-                # ======================
+
+    # ======================
     # RECIBIR COMPROBANTE
     # ======================
-
-    @dp.message(
-        F.photo
-    )
-    async def comprobante(
-        message: types.Message
-    ):
-
+    @dp.message(F.photo)
+    async def comprobante(message: types.Message):
         config = cargar_config()
-
         foto = message.photo[-1]
-
 
         guardar_pago(
             message.from_user.id,
             foto.file_id
         )
-
 
         teclado = InlineKeyboardMarkup(
             inline_keyboard=[
@@ -183,11 +130,8 @@ def crear_bot(token):
             ]
         )
 
-
         for admin in config["admins"]:
-
             try:
-
                 await bot.send_photo(
                     admin,
                     foto.file_id,
@@ -197,52 +141,28 @@ def crear_bot(token):
                     ),
                     reply_markup=teclado
                 )
-
             except Exception as e:
-
                 print(e)
-
 
         await message.answer(
             "✅ Comprobante enviado.\n"
             "Espera la aprobación."
         )
 
-
-
     # ======================
     # APROBAR VIP
     # ======================
-
-    @dp.callback_query(
-        F.data.startswith("aprobar:")
-    )
-    async def aprobar(
-        call: types.CallbackQuery
-    ):
-
+    @dp.callback_query(F.data.startswith("aprobar:"))
+    async def aprobar(call: types.CallbackQuery):
         config = cargar_config()
-
 
         if call.from_user.id not in config["admins"]:
             return
 
+        user_id = int(call.data.split(":")[1])
 
-        user_id = int(
-            call.data.split(":")[1]
-        )
-
-
-        activar_vip(
-            user_id
-        )
-
-
-        actualizar_pago(
-            user_id,
-            "aprobado"
-        )
-
+        activar_vip(user_id)
+        actualizar_pago(user_id, "aprobado")
 
         await bot.send_message(
             user_id,
@@ -251,211 +171,105 @@ def crear_bot(token):
             f"{config['grupo_vip']}"
         )
 
-
-        await call.message.answer(
-            "✅ Usuario aprobado"
-        )
-
-
+        await call.message.answer("✅ Usuario aprobado")
 
     # ======================
     # RECHAZAR
     # ======================
-
-    @dp.callback_query(
-        F.data.startswith("rechazar:")
-    )
-    async def rechazar(
-        call: types.CallbackQuery
-    ):
-
+    @dp.callback_query(F.data.startswith("rechazar:"))
+    async def rechazar(call: types.CallbackQuery):
         config = cargar_config()
-
 
         if call.from_user.id not in config["admins"]:
             return
 
-
-        user_id = int(
-            call.data.split(":")[1]
-        )
-
+        user_id = int(call.data.split(":")[1])
 
         await bot.send_message(
             user_id,
             "❌ Tu pago fue rechazado."
         )
 
-
-        await call.message.answer(
-            "Pago rechazado"
-        )
-
-
+        await call.message.answer("Pago rechazado")
 
     # ======================
     # MI CUENTA
     # ======================
-
-    @dp.callback_query(
-        F.data == "cuenta"
-    )
-    async def cuenta(
-        call: types.CallbackQuery
-    ):
-
+    @dp.callback_query(F.data == "cuenta")
+    async def cuenta(call: types.CallbackQuery):
         await call.message.answer(
             "👤 Mi cuenta\n\n"
             f"ID: {call.from_user.id}"
         )
-            # ======================
+
+    # ======================
     # ANUNCIOS MULTIMEDIA
     # ======================
-
-    @dp.message(
-        Command("anuncio") | F.caption.startswith("/anuncio")
-    )
-    async def anuncio(
-        message: types.Message
-    ):
-
+    @dp.message(Command("anuncio") | F.caption.startswith("/anuncio"))
+    async def anuncio(message: types.Message):
         config = cargar_config()
-
 
         if message.from_user.id not in config["admins"]:
             return
 
-
         enviados = 0
 
-
         for usuario in obtener_usuarios():
-
             try:
-
                 user_id = usuario["id"]
-
-
                 texto = ""
 
-
                 if message.text:
-
-                    texto = message.text.replace(
-                        "/anuncio",
-                        ""
-                    ).strip()
-
+                    texto = message.text.replace("/anuncio", "").strip()
 
                 if message.caption:
-
-                    texto = message.caption.replace(
-                        "/anuncio",
-                        ""
-                    ).strip()
-
-
+                    texto = message.caption.replace("/anuncio", "").strip()
 
                 if message.photo:
-
                     await bot.send_photo(
                         user_id,
                         message.photo[-1].file_id,
                         caption=texto
                     )
-
-
                 elif message.video:
-
                     await bot.send_video(
                         user_id,
                         message.video.file_id,
                         caption=texto
                     )
-
-
                 elif message.document:
-
                     await bot.send_document(
                         user_id,
                         message.document.file_id,
                         caption=texto
                     )
-
-
                 elif message.text:
-
-                    await bot.send_message(
-                        user_id,
-                        texto
-                    )
-
+                    await bot.send_message(user_id, texto)
 
                 enviados += 1
 
-
             except Exception as e:
+                print("Error anuncio:", e)
 
-                print(
-                    "Error anuncio:",
-                    e
-                )
-
-
-        await message.answer(
-            f"📢 Enviado a {enviados} usuarios"
-        )
-
-
+        await message.answer(f"📢 Enviado a {enviados} usuarios")
 
     return bot, dp
 
 
-
-
-
 async def iniciar():
-
     config = cargar_config()
-
     tareas = []
 
-
-    for item in config.get(
-        "bots",
-        []
-    ):
-
+    for item in config.get("bots", []):
         if item.get("activo"):
-
-            bot, dp = crear_bot(
-                item["token"]
-            )
-
-
-            tareas.append(
-                dp.start_polling(bot)
-            )
-
+            bot, dp = crear_bot(item["token"])
+            tareas.append(dp.start_polling(bot))
 
     if tareas:
-
-        await asyncio.gather(
-            *tareas
-        )
-
+        await asyncio.gather(*tareas)
     else:
-
-        print(
-            "No hay bots activos"
-        )
-
-
-
+        print("No hay bots activos")
 
 
 if __name__ == "__main__":
-
-    asyncio.run(
-        iniciar()
-    )
+    asyncio.run(iniciar())
